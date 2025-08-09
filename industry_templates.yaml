@@ -1,0 +1,42 @@
+# 行业权重模板配置文件
+# 不同行业的股票评分权重配置
+
+# 示例：科技行业
+# technology:
+#   valuation: 0.20
+#   profitability: 0.25
+#   growth: 0.30
+#   financial_health: 0.15
+#   momentum: 0.10
+
+# 示例：金融行业
+# financial:
+#   valuation: 0.30
+#   profitability: 0.30
+#   growth: 0.15
+#   financial_health: 0.20
+#   momentum: 0.05
+
+# 示例：消费品行业
+# consumer_goods:
+#   valuation: 0.25
+#   profitability: 0.25
+#   growth: 0.20
+#   financial_health: 0.15
+#   momentum: 0.15
+
+# 示例：医疗保健
+# healthcare:
+#   valuation: 0.20
+#   profitability: 0.20
+#   growth: 0.35
+#   financial_health: 0.15
+#   momentum: 0.10
+
+# 示例：能源行业
+# energy:
+#   valuation: 0.30
+#   profitability: 0.25
+#   growth: 0.15
+#   financial_health: 0.20
+#   momentum: 0.10
