@@ -1,42 +1,590 @@
-# 行业权重模板配置文件
-# 不同行业的股票评分权重配置
+# ========================================
+# 股票评分行业模板配置文件
+# ========================================
+#
+# 说明：
+# 1. 此文件用于配置不同行业的评分权重和阈值
+# 2. 可以手动修改参数来调整评分逻辑
+# 3. 支持添加新的行业配置
+# 4. 与评分系统完全解耦，便于独立管理
+#
+# 文件结构：
+# - industry_mapping: FMP API行业到模板的映射
+# - templates: 各行业的评分配置
+# - metadata: 配置元数据
+# ========================================
 
-# 示例：科技行业
-# technology:
-#   valuation: 0.20
-#   profitability: 0.25
-#   growth: 0.30
-#   financial_health: 0.15
-#   momentum: 0.10
+# FMP API行业映射配置
+industry_mapping:
+  # 金融行业
+  "Banks - Diversified": "banking"
+  "Banks - Regional": "banking"
+  "Banks - Global": "banking"
+  "Credit Services": "banking"
+  "Financial Data & Stock Exchanges": "banking"
+  "Asset Management": "banking"
+  "Investment Banking & Brokerage Services": "banking"
+  "Mortgage Finance": "banking"
+  "Capital Markets": "banking"
+  "Insurance - Life": "insurance"
+  "Insurance - Property & Casualty": "insurance"
+  "Insurance - Reinsurance": "insurance"
 
-# 示例：金融行业
-# financial:
-#   valuation: 0.30
-#   profitability: 0.30
-#   growth: 0.15
-#   financial_health: 0.20
-#   momentum: 0.05
+  # 科技行业
+  "Consumer Electronics": "technology"
+  "Software - Application": "technology"
+  "Software - Infrastructure": "technology"
+  "Semiconductors": "technology"
+  "Technology Hardware, Storage & Peripherals": "technology"
+  "Internet Content & Information": "technology"
+  "Communication Equipment": "technology"
+  "Electronic Gaming & Multimedia": "technology"
 
-# 示例：消费品行业
-# consumer_goods:
-#   valuation: 0.25
-#   profitability: 0.25
-#   growth: 0.20
-#   financial_health: 0.15
-#   momentum: 0.15
+  # 医疗保健
+  "Drug Manufacturers - General": "healthcare"
+  "Drug Manufacturers - Specialty & Generic": "healthcare"
+  "Medical Devices": "healthcare"
+  "Medical Care Facilities": "healthcare"
+  "Biotechnology": "healthcare"
+  "Medical Distribution": "healthcare"
 
-# 示例：医疗保健
-# healthcare:
-#   valuation: 0.20
-#   profitability: 0.20
-#   growth: 0.35
-#   financial_health: 0.15
-#   momentum: 0.10
+  # 能源行业
+  "Oil & Gas Integrated": "energy"
+  "Oil & Gas E&P": "energy"
+  "Oil & Gas Midstream": "energy"
+  "Oil & Gas Refining & Marketing": "energy"
+  "Oil & Gas Equipment & Services": "energy"
+  "Thermal Coal": "energy"
+  "Renewable Energy": "energy"
 
-# 示例：能源行业
-# energy:
-#   valuation: 0.30
-#   profitability: 0.25
-#   growth: 0.15
-#   financial_health: 0.20
-#   momentum: 0.10
+  # 消费品
+  "Beverages - Non-Alcoholic": "consumer_goods"
+  "Beverages - Alcoholic": "consumer_goods"
+  "Packaged Foods": "consumer_goods"
+  "Household & Personal Products": "consumer_goods"
+  "Textile Manufacturing": "consumer_goods"
+  "Apparel Manufacturing": "consumer_goods"
+  "Footwear & Accessories": "consumer_goods"
+
+  # 零售业
+  "Discount Stores": "retail"
+  "Department Stores": "retail"
+  "Specialty Retail": "retail"
+  "Grocery Stores": "retail"
+  "Home Improvement Retail": "retail"
+  "Auto & Truck Dealerships": "retail"
+
+  # 工业
+  "Aerospace & Defense": "industrial"
+  "Industrial Distribution": "industrial"
+  "Specialty Industrial Machinery": "industrial"
+  "Metal Fabrication": "industrial"
+  "Electrical Equipment & Parts": "industrial"
+  "Building Products & Equipment": "industrial"
+
+  # 房地产
+  "REIT - Office": "real_estate"
+  "REIT - Retail": "real_estate"
+  "REIT - Residential": "real_estate"
+  "REIT - Industrial": "real_estate"
+  "REIT - Healthcare Facilities": "real_estate"
+  "Real Estate - Development": "real_estate"
+
+  # 通信服务
+  "Telecom Services": "telecommunications"
+  "Entertainment": "telecommunications"
+  "Broadcasting": "telecommunications"
+  "Publishing": "telecommunications"
+
+  # 材料
+  "Chemicals": "materials"
+  "Steel": "materials"
+  "Aluminum": "materials"
+  "Copper": "materials"
+  "Gold": "materials"
+  "Silver": "materials"
+  "Agricultural Inputs": "materials"
+
+  # 公用事业
+  "Utilities - Regulated Electric": "utilities"
+  "Utilities - Regulated Gas": "utilities"
+  "Utilities - Regulated Water": "utilities"
+  "Utilities - Independent Power Producers": "utilities"
+
+  # 运输
+  "Airlines": "transportation"
+  "Railroads": "transportation"
+  "Trucking": "transportation"
+  "Marine Shipping": "transportation"
+  "Airports & Air Services": "transportation"
+
+  # 默认映射
+  "default": "general"
+
+# 行业评分模板配置
+templates:
+  # ========================================
+  # 银行业模板
+  # ========================================
+  banking:
+    name: "银行业"
+    description: "银行、金融服务、信贷等金融机构"
+    characteristics:
+      - "重视财务稳健性和风险管理"
+      - "关注ROE、资本充足率"
+      - "重视股息分红"
+      - "估值相对保守"
+
+    thresholds:
+      roe_min: 8 # 最低ROE要求（%）
+      pe_max: 12 # 低估值PE上限
+      pe_zero: 20 # 高估值PE下限
+      pb_bonus: 1.2 # PB奖励阈值
+      yield_min: 3 # 最低股息率（%）
+      ma_days: 200 # 趋势分析天数
+      trend_min_pct: -5 # 趋势下限（%）
+      trend_max_pct: 15 # 趋势上限（%）
+      atr_pct_max: 15 # 低风险ATR上限
+      atr_pct_zero: 30 # 高风险ATR下限
+
+    weights:
+      quality: 0.25 # 财务质量权重
+      value: 0.30 # 估值权重
+      dividend: 0.20 # 分红权重
+      trend: 0.15 # 趋势权重
+      risk: -0.10 # 风险权重（负值）
+
+    decision_thresholds:
+      buy: 70 # 买入阈值
+      watch: 55 # 观望阈值
+
+  # ========================================
+  # 科技行业模板
+  # ========================================
+  technology:
+    name: "科技行业"
+    description: "软件、硬件、半导体、互联网等科技公司"
+    characteristics:
+      - "重视成长性和创新能力"
+      - "关注营收增长和市场份额"
+      - "估值相对较高"
+      - "波动性较大"
+
+    thresholds:
+      roe_min: 15
+      pe_max: 25
+      pe_zero: 50
+      pb_bonus: 2.0
+      yield_min: 1
+      ma_days: 50
+      trend_min_pct: -10
+      trend_max_pct: 30
+      atr_pct_max: 25
+      atr_pct_zero: 50
+
+    weights:
+      quality: 0.20
+      value: 0.25
+      dividend: 0.10
+      trend: 0.25
+      risk: -0.20
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 医疗保健模板
+  # ========================================
+  healthcare:
+    name: "医疗保健"
+    description: "制药、医疗器械、生物技术、医疗服务"
+    characteristics:
+      - "重视研发投入和专利保护"
+      - "关注产品管线和新药审批"
+      - "防御性较强"
+      - "监管风险较高"
+
+    thresholds:
+      roe_min: 12
+      pe_max: 20
+      pe_zero: 40
+      pb_bonus: 1.5
+      yield_min: 2
+      ma_days: 100
+      trend_min_pct: -8
+      trend_max_pct: 20
+      atr_pct_max: 20
+      atr_pct_zero: 40
+
+    weights:
+      quality: 0.30
+      value: 0.20
+      dividend: 0.15
+      trend: 0.20
+      risk: -0.15
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 能源行业模板
+  # ========================================
+  energy:
+    name: "能源行业"
+    description: "石油、天然气、煤炭、可再生能源"
+    characteristics:
+      - "受大宗商品价格影响大"
+      - "重视现金流和资本回报"
+      - "周期性较强"
+      - "环境政策风险"
+
+    thresholds:
+      roe_min: 10
+      pe_max: 15
+      pe_zero: 30
+      pb_bonus: 1.0
+      yield_min: 4
+      ma_days: 150
+      trend_min_pct: -15
+      trend_max_pct: 25
+      atr_pct_max: 25
+      atr_pct_zero: 45
+
+    weights:
+      quality: 0.25
+      value: 0.30
+      dividend: 0.25
+      trend: 0.10
+      risk: -0.20
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 消费品模板
+  # ========================================
+  consumer_goods:
+    name: "消费品"
+    description: "食品饮料、日用品、服装等消费品"
+    characteristics:
+      - "防御性较强"
+      - "重视品牌价值"
+      - "现金流稳定"
+      - "竞争激烈"
+
+    thresholds:
+      roe_min: 15
+      pe_max: 20
+      pe_zero: 35
+      pb_bonus: 1.8
+      yield_min: 2.5
+      ma_days: 100
+      trend_min_pct: -8
+      trend_max_pct: 18
+      atr_pct_max: 18
+      atr_pct_zero: 35
+
+    weights:
+      quality: 0.25
+      value: 0.25
+      dividend: 0.20
+      trend: 0.20
+      risk: -0.10
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 零售业模板
+  # ========================================
+  retail:
+    name: "零售业"
+    description: "百货商店、专卖店、折扣店等零售企业"
+    characteristics:
+      - "受经济周期影响"
+      - "重视同店销售增长"
+      - "电商转型压力"
+      - "运营效率关键"
+
+    thresholds:
+      roe_min: 12
+      pe_max: 18
+      pe_zero: 35
+      pb_bonus: 1.5
+      yield_min: 2
+      ma_days: 80
+      trend_min_pct: -10
+      trend_max_pct: 20
+      atr_pct_max: 20
+      atr_pct_zero: 40
+
+    weights:
+      quality: 0.20
+      value: 0.25
+      dividend: 0.15
+      trend: 0.25
+      risk: -0.15
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 工业模板
+  # ========================================
+  industrial:
+    name: "工业"
+    description: "航空航天、机械制造、电气设备等"
+    characteristics:
+      - "周期性行业"
+      - "重视订单和产能利用率"
+      - "技术壁垒较高"
+      - "全球化竞争"
+
+    thresholds:
+      roe_min: 12
+      pe_max: 18
+      pe_zero: 35
+      pb_bonus: 1.5
+      yield_min: 2.5
+      ma_days: 120
+      trend_min_pct: -12
+      trend_max_pct: 22
+      atr_pct_max: 22
+      atr_pct_zero: 42
+
+    weights:
+      quality: 0.25
+      value: 0.25
+      dividend: 0.15
+      trend: 0.20
+      risk: -0.15
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 房地产模板
+  # ========================================
+  real_estate:
+    name: "房地产"
+    description: "REIT、房地产开发、物业管理"
+    characteristics:
+      - "重视租金收入和资产价值"
+      - "杠杆率较高"
+      - "利率敏感"
+      - "地域性明显"
+
+    thresholds:
+      roe_min: 8
+      pe_max: 15
+      pe_zero: 30
+      pb_bonus: 1.0
+      yield_min: 4
+      ma_days: 100
+      trend_min_pct: -10
+      trend_max_pct: 20
+      atr_pct_max: 20
+      atr_pct_zero: 40
+
+    weights:
+      quality: 0.20
+      value: 0.25
+      dividend: 0.30
+      trend: 0.15
+      risk: -0.10
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 通信服务模板
+  # ========================================
+  telecommunications:
+    name: "通信服务"
+    description: "电信、媒体、娱乐、出版"
+    characteristics:
+      - "基础设施投资大"
+      - "监管环境复杂"
+      - "数字化转型"
+      - "内容为王"
+
+    thresholds:
+      roe_min: 10
+      pe_max: 18
+      pe_zero: 35
+      pb_bonus: 1.5
+      yield_min: 3
+      ma_days: 100
+      trend_min_pct: -8
+      trend_max_pct: 18
+      atr_pct_max: 18
+      atr_pct_zero: 35
+
+    weights:
+      quality: 0.20
+      value: 0.25
+      dividend: 0.25
+      trend: 0.20
+      risk: -0.10
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 材料模板
+  # ========================================
+  materials:
+    name: "材料"
+    description: "化工、钢铁、有色金属、贵金属"
+    characteristics:
+      - "大宗商品价格敏感"
+      - "周期性明显"
+      - "成本控制关键"
+      - "环保压力大"
+
+    thresholds:
+      roe_min: 10
+      pe_max: 15
+      pe_zero: 30
+      pb_bonus: 1.2
+      yield_min: 3
+      ma_days: 120
+      trend_min_pct: -15
+      trend_max_pct: 25
+      atr_pct_max: 25
+      atr_pct_zero: 45
+
+    weights:
+      quality: 0.20
+      value: 0.30
+      dividend: 0.20
+      trend: 0.20
+      risk: -0.10
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 公用事业模板
+  # ========================================
+  utilities:
+    name: "公用事业"
+    description: "电力、天然气、水务等公用事业"
+    characteristics:
+      - "防御性最强"
+      - "监管定价"
+      - "现金流稳定"
+      - "资本密集"
+
+    thresholds:
+      roe_min: 8
+      pe_max: 18
+      pe_zero: 30
+      pb_bonus: 1.5
+      yield_min: 4
+      ma_days: 150
+      trend_min_pct: -5
+      trend_max_pct: 15
+      atr_pct_max: 15
+      atr_pct_zero: 30
+
+    weights:
+      quality: 0.20
+      value: 0.25
+      dividend: 0.30
+      trend: 0.15
+      risk: -0.10
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 运输模板
+  # ========================================
+  transportation:
+    name: "运输"
+    description: "航空、铁路、公路运输、航运"
+    characteristics:
+      - "经济周期敏感"
+      - "运营效率重要"
+      - "油价影响大"
+      - "竞争激烈"
+
+    thresholds:
+      roe_min: 10
+      pe_max: 16
+      pe_zero: 32
+      pb_bonus: 1.3
+      yield_min: 2.5
+      ma_days: 100
+      trend_min_pct: -12
+      trend_max_pct: 20
+      atr_pct_max: 22
+      atr_pct_zero: 42
+
+    weights:
+      quality: 0.20
+      value: 0.25
+      dividend: 0.15
+      trend: 0.25
+      risk: -0.15
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+  # ========================================
+  # 通用模板（默认）
+  # ========================================
+  general:
+    name: "通用"
+    description: "未分类或新兴行业的通用评分模板"
+    characteristics:
+      - "平衡各维度权重"
+      - "适用于大多数行业"
+      - "相对保守"
+
+    thresholds:
+      roe_min: 10
+      pe_max: 18
+      pe_zero: 35
+      pb_bonus: 1.5
+      yield_min: 2.5
+      ma_days: 100
+      trend_min_pct: -10
+      trend_max_pct: 20
+      atr_pct_max: 20
+      atr_pct_zero: 40
+
+    weights:
+      quality: 0.25
+      value: 0.25
+      dividend: 0.20
+      trend: 0.20
+      risk: -0.10
+
+    decision_thresholds:
+      buy: 70
+      watch: 55
+
+# 配置元数据
+metadata:
+  version: "1.0.0"
+  last_updated: "2025-08-10"
+  description: "股票评分行业模板配置文件"
+  author: "Stock Rookie API"
+  notes:
+    - "此文件可以手动修改，修改后需要重启服务"
+    - "添加新行业时，需要在industry_mapping中添加映射"
+    - "所有阈值和权重都可以根据市场情况调整"
+    - "建议定期根据市场表现优化配置"
