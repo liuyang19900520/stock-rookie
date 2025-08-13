@@ -12,7 +12,6 @@
 - **云原生部署**：支持AWS Lambda无服务器部署
 
 ### 数据覆盖
-- **价格数据**：5年历史日线数据（开盘、收盘、最高、最低、成交量）
 - **公司信息**：基本面信息、行业分类、市值等
 - **财务指标**：
   - 盈利能力：ROE、ROA、毛利率、净利率
@@ -20,19 +19,27 @@
   - 偿债能力：负债率、流动比率
   - 估值指标：PE、PB、PS比率
   - 现金流：自由现金流、经营现金流
+- **动态行业对比**：
+  - 同行业市值前10企业平均值
+  - 全行业平均值
+  - 同行业成交量前10企业平均值
 
 ## 📋 项目结构
 
 ```
 stock-rookie/
-├── main.py                 # FastAPI应用入口
-├── data_fetcher.py         # 股票数据抓取模块
-├── scoring.py              # 股票评分逻辑
-├── demo_data.py            # 演示数据生成
-├── lambda_handler.py       # AWS Lambda适配器
-├── requirements.txt        # Python依赖
-├── industry_templates.yaml # 行业评分权重模板
-└── README.md              # 项目文档
+├── main.py                    # FastAPI应用入口
+├── data_fetcher.py            # 股票数据抓取模块（简化版）
+├── financial_analysis.py      # 财务分析和SWOT分析模块
+├── scoring.py                 # 股票评分逻辑
+├── cors_config.py             # CORS配置
+├── start_server.py            # 服务器启动脚本
+├── requirements.txt           # Python依赖
+├── env.example                # 环境变量示例
+├── industry_templates.yaml    # 行业评分权重模板
+├── industry_templates_updated.yaml # 更新的行业模板
+├── API.md                     # 详细API文档
+└── README.md                  # 项目文档
 ```
 
 ## 🛠️ 快速开始
@@ -51,40 +58,53 @@ pip install -r requirements.txt
 ```
 
 3. **启动服务**
+
 ```bash
-uvicorn main:app --reload
+# 开发环境启动（推荐）
+python start_server.py --env development --port 8000
+
+# 或者直接使用uvicorn
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 4. **访问API**
 - API文档: http://localhost:8000/docs
 - 健康检查: http://localhost:8000/ping
 
-### Docker部署
+### CORS配置
 
-```bash
-# 构建镜像
-docker build -t stock-rookie .
+项目已配置跨域资源共享（CORS）支持，解决前端应用访问API时的跨域问题：
 
-# 运行容器
-docker run -p 8000:8000 stock-rookie
-```
+- **开发环境**：允许所有来源，适合本地开发
+- **生产环境**：只允许预定义域名，更安全
+- **测试环境**：允许测试域名和本地开发域名
+
+配置详情请查看 `cors_config.py` 文件。
+
+
 
 ## 📚 API接口
 
-### 基础接口
+详细的API文档请参考 [API.md](API.md)
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/` | 欢迎信息 |
-| GET | `/ping` | 健康检查 |
-| GET | `/health` | 详细健康状态 |
-
-### 数据接口
+### 主要端点
 
 | 方法 | 路径 | 参数 | 描述 |
 |------|------|------|------|
-| GET | `/data` | `ticker` | 获取真实股票数据 |
-| GET | `/demo` | `ticker` | 获取演示股票数据 |
+| GET | `/` | - | 欢迎信息 |
+| GET | `/ping` | - | 健康检查 |
+| GET | `/health` | - | 详细健康状态 |
+| GET | `/status` | - | API状态 |
+| GET | `/data` | `ticker` | 获取股票基础数据 |
+| GET | `/score` | `ticker` | 获取股票评分 |
+| GET | `/analysis/financial` | `ticker` | 获取详细财务分析 |
+| GET | `/analysis/swot` | `ticker` | 获取SWOT分析 |
+| GET | `/analysis/dashboard` | `ticker` | 获取完整仪表板数据 |
+| GET | `/templates` | - | 获取行业模板列表 |
+| GET | `/templates/{name}` | `name` | 获取特定模板详情 |
+| GET | `/analysis/financial` | `ticker` | 获取详细财务分析 |
+| GET | `/analysis/swot` | `ticker` | 获取SWOT分析 |
+| GET | `/analysis/dashboard` | `ticker` | 获取完整仪表板数据 |
 
 ### 使用示例
 
@@ -94,6 +114,18 @@ curl "http://localhost:8000/data?ticker=AAPL"
 
 # 获取演示数据
 curl "http://localhost:8000/demo?ticker=AAPL"
+
+# 获取股票评分
+curl "http://localhost:8000/score?ticker=AAPL"
+
+# 获取详细财务分析
+curl "http://localhost:8000/analysis/financial?ticker=AAPL"
+
+# 获取SWOT分析
+curl "http://localhost:8000/analysis/swot?ticker=AAPL"
+
+# 获取完整仪表板数据
+curl "http://localhost:8000/analysis/dashboard?ticker=AAPL"
 ```
 
 ### 响应格式
@@ -125,85 +157,33 @@ curl "http://localhost:8000/demo?ticker=AAPL"
 }
 ```
 
-## ☁️ AWS Lambda部署
-
-### 准备部署包
-
-```bash
-# 安装依赖到本地目录
-pip install -r requirements.txt -t ./lambda-deployment
-
-# 复制源代码
-cp *.py lambda-deployment/
-
-# 创建部署包
-cd lambda-deployment
-zip -r ../stock-rookie-lambda.zip .
-```
-
-### Lambda配置
-
-- **Runtime**: Python 3.11
-- **Handler**: `lambda_handler.lambda_handler`
-- **Memory**: 512MB
-- **Timeout**: 30秒
-
-### 环境变量
-
-| 变量名 | 描述 | 默认值 |
-|--------|------|--------|
-| `LOG_LEVEL` | 日志级别 | `INFO` |
-
 ## 🧪 测试
 
 ```bash
-# 运行基本测试
-python -m pytest
-
 # 测试API接口
 curl http://localhost:8000/ping
-curl "http://localhost:8000/demo?ticker=AAPL"
+curl "http://localhost:8000/data?ticker=AAPL"
+curl "http://localhost:8000/score?ticker=AAPL"
 ```
 
 ## 📊 性能特性
 
 - **高并发**：基于FastAPI的异步处理
-- **缓存优化**：数据获取缓存机制
+- **实时数据**：直接从FMP API获取最新数据
 - **错误处理**：完善的异常处理和日志记录
 - **参数验证**：自动参数校验和错误提示
 
 ## 🔧 技术栈
 
 - **后端框架**: FastAPI
-- **数据源**: Yahoo Finance (yfinance)
+- **数据源**: Financial Modeling Prep (FMP) API
 - **数据处理**: Pandas, NumPy
-- **部署**: Uvicorn, AWS Lambda (Mangum)
+- **部署**: Uvicorn
 - **文档**: 自动生成OpenAPI/Swagger文档
-
-## 📈 路线图
-
-- [ ] 添加更多数据源支持
-- [ ] 实现股票筛选功能
-- [ ] 添加技术指标计算
-- [ ] 支持投资组合分析
-- [ ] 集成机器学习预测模型
-
-## 🤝 贡献指南
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 创建 Pull Request
 
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 📞 联系方式
-
-- 项目地址: [https://github.com/your-username/stock-rookie](https://github.com/your-username/stock-rookie)
-- 问题反馈: [Issues](https://github.com/your-username/stock-rookie/issues)
 
 ---
 

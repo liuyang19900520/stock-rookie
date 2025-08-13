@@ -1,9 +1,12 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 from datetime import datetime
-from data_fetcher import FMPStockDataFetcher, FMPStockDataFetcherUnlimited
+from data_fetcher import FMPStockDataFetcher
 from scoring import score_stock, template_manager
+from cors_config import get_cors_config, get_dev_cors_config
+from financial_analysis import FinancialAnalyzer
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -16,9 +19,27 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# 配置 CORS 中间件
+import os
+environment = os.getenv("ENVIRONMENT", "development").lower()
+
+if environment == "development":
+    # 开发环境使用宽松配置
+    cors_config = get_dev_cors_config()
+    logger.info("使用开发环境CORS配置（允许所有来源）")
+else:
+    # 生产环境使用严格配置
+    cors_config = get_cors_config()
+    logger.info(f"使用{environment}环境CORS配置")
+
+app.add_middleware(
+    CORSMiddleware,
+    **cors_config
+)
+
 # 创建数据获取器实例
 stock_fetcher = FMPStockDataFetcher()
-stock_fetcher_unlimited = FMPStockDataFetcherUnlimited()
+financial_analyzer = FinancialAnalyzer()
 
 @app.get("/")
 async def root():
@@ -41,15 +62,15 @@ async def health_check():
     }
 
 @app.get("/data")
-async def get_stock_data_cached(ticker: str = Query(..., max_length=10, description="股票代码，如 AAPL")):
+async def get_stock_data(ticker: str = Query(..., max_length=10, description="股票代码，如 AAPL")):
     """
-    获取股票完整数据（使用缓存）
+    获取股票数据（简化版本）
     
     Args:
         ticker: 股票代码，长度不超过10个字符
         
     Returns:
-        包含价格数据、公司信息和财务指标的完整真实数据（优先从缓存获取）
+        包含公司信息和财务指标的字典
     """
     # 参数校验
     if not ticker or not isinstance(ticker, str):
@@ -68,134 +89,10 @@ async def get_stock_data_cached(ticker: str = Query(..., max_length=10, descript
     ticker = ticker.upper().strip()
     
     try:
-        logger.info(f"开始处理股票数据请求（缓存模式）: {ticker}")
+        logger.info(f"开始处理股票数据请求: {ticker}")
         
-        # 使用缓存获取数据
-        stock_data = stock_fetcher.get_stock_data(ticker, use_cache=True)
-        
-        if stock_data is None:
-            logger.warning(f"无法获取股票 {ticker} 的数据")
-            raise HTTPException(
-                status_code=429,
-                detail="请求过于频繁或已达到每日限制，请稍后重试"
-            )
-        
-        # 添加请求统计信息
-        request_count = stock_fetcher._get_request_count()
-        stock_data["request_info"] = {
-            "daily_requests_used": request_count,
-            "daily_limit": stock_fetcher.daily_request_limit,
-            "remaining_requests": stock_fetcher.daily_request_limit - request_count,
-            "cache_mode": "enabled"
-        }
-        
-        logger.info(f"成功返回股票 {ticker} 的数据（缓存模式）")
-        return stock_data
-        
-    except HTTPException:
-        # 重新抛出 HTTP 异常
-        raise
-    except Exception as e:
-        logger.error(f"获取股票 {ticker} 数据时发生未预期错误: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="服务器内部错误，请稍后重试"
-        )
-
-@app.get("/data/fresh")
-async def get_stock_data_fresh(ticker: str = Query(..., max_length=10, description="股票代码，如 AAPL")):
-    """
-    获取股票最新数据（不使用缓存）
-    
-    Args:
-        ticker: 股票代码，长度不超过10个字符
-        
-    Returns:
-        包含价格数据、公司信息和财务指标的最新真实数据（强制从Yahoo Finance获取）
-    """
-    # 参数校验
-    if not ticker or not isinstance(ticker, str):
-        raise HTTPException(
-            status_code=400,
-            detail="ticker参数必须是非空字符串"
-        )
-    
-    if len(ticker) > 10:
-        raise HTTPException(
-            status_code=400,
-            detail="ticker长度不能超过10个字符"
-        )
-    
-    # 转换为大写
-    ticker = ticker.upper().strip()
-    
-    try:
-        logger.info(f"开始处理股票数据请求（最新数据模式）: {ticker}")
-        
-        # 强制获取最新数据，不使用缓存
-        stock_data = stock_fetcher.get_stock_data(ticker, use_cache=False)
-        
-        if stock_data is None:
-            logger.warning(f"无法获取股票 {ticker} 的最新数据")
-            raise HTTPException(
-                status_code=429,
-                detail="请求过于频繁或已达到每日限制，请稍后重试"
-            )
-        
-        # 添加请求统计信息
-        request_count = stock_fetcher._get_request_count()
-        stock_data["request_info"] = {
-            "daily_requests_used": request_count,
-            "daily_limit": stock_fetcher.daily_request_limit,
-            "remaining_requests": stock_fetcher.daily_request_limit - request_count,
-            "cache_mode": "bypassed"
-        }
-        
-        logger.info(f"成功返回股票 {ticker} 的最新数据")
-        return stock_data
-        
-    except HTTPException:
-        # 重新抛出 HTTP 异常
-        raise
-    except Exception as e:
-        logger.error(f"获取股票 {ticker} 最新数据时发生未预期错误: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="服务器内部错误，请稍后重试"
-        )
-
-@app.get("/data/unlimited")
-async def get_stock_data_unlimited(ticker: str = Query(..., max_length=10, description="股票代码，如 AAPL")):
-    """
-    获取股票完整数据（无请求限制版本）
-    
-    Args:
-        ticker: 股票代码，长度不超过10个字符
-        
-    Returns:
-        包含价格数据、公司信息和财务指标的完整真实数据（无请求限制）
-    """
-    # 参数校验
-    if not ticker or not isinstance(ticker, str):
-        raise HTTPException(
-            status_code=400,
-            detail="ticker参数必须是非空字符串"
-        )
-    
-    if len(ticker) > 10:
-        raise HTTPException(
-            status_code=400,
-            detail="ticker长度不能超过10个字符"
-        )
-    
-    # 转换为大写
-    ticker = ticker.upper().strip()
-    
-    try:
-        logger.info(f"开始处理股票数据请求（无限制版本）: {ticker}")
-        
-        # 使用无限制版本获取数据
-        stock_data = stock_fetcher_unlimited.get_stock_data(ticker, use_cache=True)
+        # 获取数据
+        stock_data = stock_fetcher.get_stock_data(ticker)
         
         if stock_data is None:
             logger.warning(f"无法获取股票 {ticker} 的数据")
@@ -204,15 +101,7 @@ async def get_stock_data_unlimited(ticker: str = Query(..., max_length=10, descr
                 detail="无法获取股票数据，请稍后重试"
             )
         
-        # 添加请求信息（无限制版本）
-        stock_data["request_info"] = {
-            "version": "unlimited",
-            "data_source": "financial_modeling_prep_unlimited",
-            "cache_mode": "enabled",
-            "rate_limiting": "enabled_only_for_api_protection"
-        }
-        
-        logger.info(f"成功返回股票 {ticker} 的数据（无限制版本）")
+        logger.info(f"成功返回股票 {ticker} 的数据")
         return stock_data
         
     except HTTPException:
@@ -225,66 +114,7 @@ async def get_stock_data_unlimited(ticker: str = Query(..., max_length=10, descr
             detail="服务器内部错误，请稍后重试"
         )
 
-@app.get("/data/unlimited/fresh")
-async def get_stock_data_unlimited_fresh(ticker: str = Query(..., max_length=10, description="股票代码，如 AAPL")):
-    """
-    获取股票完整数据（无请求限制版本，强制刷新）
-    
-    Args:
-        ticker: 股票代码，长度不超过10个字符
-        
-    Returns:
-        包含价格数据、公司信息和财务指标的完整真实数据（无请求限制，强制刷新）
-    """
-    # 参数校验
-    if not ticker or not isinstance(ticker, str):
-        raise HTTPException(
-            status_code=400,
-            detail="ticker参数必须是非空字符串"
-        )
-    
-    if len(ticker) > 10:
-        raise HTTPException(
-            status_code=400,
-            detail="ticker长度不能超过10个字符"
-        )
-    
-    # 转换为大写
-    ticker = ticker.upper().strip()
-    
-    try:
-        logger.info(f"开始处理股票数据请求（无限制版本，强制刷新）: {ticker}")
-        
-        # 使用无限制版本强制获取数据
-        stock_data = stock_fetcher_unlimited.get_stock_data(ticker, use_cache=False)
-        
-        if stock_data is None:
-            logger.warning(f"无法获取股票 {ticker} 的数据")
-            raise HTTPException(
-                status_code=500,
-                detail="无法获取股票数据，请稍后重试"
-            )
-        
-        # 添加请求信息（无限制版本）
-        stock_data["request_info"] = {
-            "version": "unlimited",
-            "data_source": "financial_modeling_prep_unlimited",
-            "cache_mode": "disabled",
-            "rate_limiting": "enabled_only_for_api_protection"
-        }
-        
-        logger.info(f"成功返回股票 {ticker} 的数据（无限制版本，强制刷新）")
-        return stock_data
-        
-    except HTTPException:
-        # 重新抛出 HTTP 异常
-        raise
-    except Exception as e:
-        logger.error(f"获取股票 {ticker} 数据时发生未预期错误: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="服务器内部错误，请稍后重试"
-        )
+
 
 @app.get("/status")
 async def api_status():
@@ -294,41 +124,17 @@ async def api_status():
     Returns:
         系统状态和数据源可用性信息
     """
-    import time
     from datetime import datetime
-    
-    # 获取请求统计
-    request_count = stock_fetcher._get_request_count()
     
     status = {
         "timestamp": datetime.now().isoformat(),
-        "api_version": "2.0.0",
+        "api_version": "3.0.0",
         "status": "operational",
-        "request_stats": {
-            "daily_requests_used": request_count,
-            "daily_limit": stock_fetcher.daily_request_limit,
-            "remaining_requests": stock_fetcher.daily_request_limit - request_count,
-            "usage_percentage": f"{(request_count / stock_fetcher.daily_request_limit * 100):.1f}%"
-        },
         "services": {
             "fmp_api": {"status": "unknown", "description": "Financial Modeling Prep API数据源"},
-            "cache_system": {"status": "active", "description": "本地缓存系统"},
-            "rate_limiting": {"status": "active", "description": "1-3秒随机延迟保护"}
+            "rate_limiting": {"status": "disabled", "description": "无限制模式"}
         }
     }
-    
-    # 检查缓存系统
-    try:
-        cache_dir = stock_fetcher.cache_dir
-        if cache_dir.exists():
-            cache_files = list(cache_dir.glob("*.json"))
-            status["services"]["cache_system"]["cached_stocks"] = len(cache_files) - 1  # 减去request_count.json
-            status["services"]["cache_system"]["status"] = "healthy"
-        else:
-            status["services"]["cache_system"]["status"] = "degraded"
-    except Exception as e:
-        status["services"]["cache_system"]["status"] = "unavailable"
-        status["services"]["cache_system"]["error"] = str(e)
     
     # FMP API测试
     try:
@@ -342,14 +148,6 @@ async def api_status():
     except Exception as e:
         status["services"]["fmp_api"]["status"] = "unavailable"
         status["services"]["fmp_api"]["error"] = str(e)
-    
-    # 检查请求限制状态
-    if request_count >= stock_fetcher.daily_request_limit:
-        status["services"]["rate_limiting"]["status"] = "limit_reached"
-        status["services"]["rate_limiting"]["note"] = "已达到每日请求限制"
-        status["status"] = "degraded"
-    elif request_count >= stock_fetcher.daily_request_limit * 0.8:
-        status["services"]["rate_limiting"]["note"] = "接近每日请求限制"
     
     return status
 
@@ -384,7 +182,7 @@ async def score_stock_endpoint(ticker: str = Query(..., max_length=10, descripti
         logger.info(f"开始处理股票评分请求: {ticker}")
         
         # 先获取股票数据
-        stock_data = stock_fetcher.get_stock_data(ticker, use_cache=True)
+        stock_data = stock_fetcher.get_stock_data(ticker)
         
         if stock_data is None:
             logger.warning(f"无法获取股票 {ticker} 的数据")
@@ -407,13 +205,7 @@ async def score_stock_endpoint(ticker: str = Query(..., max_length=10, descripti
         rating_result["ticker"] = ticker
         rating_result["timestamp"] = stock_data.get("timestamp")
         
-        # 添加请求统计信息
-        request_count = stock_fetcher._get_request_count()
-        rating_result["request_info"] = {
-            "daily_requests_used": request_count,
-            "daily_limit": stock_fetcher.daily_request_limit,
-            "remaining_requests": stock_fetcher.daily_request_limit - request_count
-        }
+
         
         logger.info(f"成功返回股票 {ticker} 的评分: {rating_result['total_score']:.1f} ({rating_result['decision']})")
         return rating_result
@@ -608,6 +400,250 @@ async def get_all_industries():
         raise HTTPException(
             status_code=500,
             detail=f"获取行业分类失败: {str(e)}"
+        )
+
+@app.get("/analysis/financial")
+async def get_financial_analysis(ticker: str = Query(..., max_length=10, description="股票代码，如 AAPL")):
+    """
+    获取详细的财务分析数据
+    
+    Args:
+        ticker: 股票代码，长度不超过10个字符
+        
+    Returns:
+        包含关键财务指标、行业对比、增长率等详细分析数据
+    """
+    # 参数校验
+    if not ticker or not isinstance(ticker, str):
+        raise HTTPException(
+            status_code=400,
+            detail="ticker参数必须是非空字符串"
+        )
+    
+    if len(ticker) > 10:
+        raise HTTPException(
+            status_code=400,
+            detail="ticker长度不能超过10个字符"
+        )
+    
+    # 转换为大写
+    ticker = ticker.upper().strip()
+    
+    try:
+        logger.info(f"开始处理财务分析请求: {ticker}")
+        
+        # 获取股票数据以确定行业
+        stock_data = stock_fetcher.get_stock_data(ticker)
+        
+        if stock_data is None:
+            logger.warning(f"无法获取股票 {ticker} 的数据")
+            raise HTTPException(
+                status_code=500,
+                detail="无法获取股票数据，请稍后重试"
+            )
+        
+        # 确定行业
+        company_info = stock_data.get("company_info", {})
+        fmp_industry = company_info.get("industry", "General")
+        
+        # 映射到模板行业
+        industry = template_manager.map_fmp_industry(fmp_industry)
+        
+        # 获取详细财务分析
+        financial_analysis = financial_analyzer.get_detailed_financial_metrics(ticker, industry, fmp_industry)
+        
+        # 添加基础信息
+        result = {
+            "ticker": ticker,
+            "industry": industry,
+            "fmp_industry": fmp_industry,
+            "timestamp": datetime.now().isoformat(),
+            "financial_analysis": financial_analysis
+        }
+        
+        logger.info(f"成功返回股票 {ticker} 的财务分析")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取股票 {ticker} 财务分析时发生未预期错误: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="服务器内部错误，请稍后重试"
+        )
+
+@app.get("/analysis/swot")
+async def get_swot_analysis(ticker: str = Query(..., max_length=10, description="股票代码，如 AAPL")):
+    """
+    获取SWOT分析
+    
+    Args:
+        ticker: 股票代码，长度不超过10个字符
+        
+    Returns:
+        包含优势、劣势、机会、威胁的SWOT分析
+    """
+    # 参数校验
+    if not ticker or not isinstance(ticker, str):
+        raise HTTPException(
+            status_code=400,
+            detail="ticker参数必须是非空字符串"
+        )
+    
+    if len(ticker) > 10:
+        raise HTTPException(
+            status_code=400,
+            detail="ticker长度不能超过10个字符"
+        )
+    
+    # 转换为大写
+    ticker = ticker.upper().strip()
+    
+    try:
+        logger.info(f"开始处理SWOT分析请求: {ticker}")
+        
+        # 获取股票数据以确定行业
+        stock_data = stock_fetcher.get_stock_data(ticker)
+        
+        if stock_data is None:
+            logger.warning(f"无法获取股票 {ticker} 的数据")
+            raise HTTPException(
+                status_code=500,
+                detail="无法获取股票数据，请稍后重试"
+            )
+        
+        # 确定行业
+        company_info = stock_data.get("company_info", {})
+        fmp_industry = company_info.get("industry", "General")
+        
+        # 映射到模板行业
+        industry = template_manager.map_fmp_industry(fmp_industry)
+        
+        # 生成SWOT分析
+        swot_analysis = financial_analyzer.generate_swot_analysis(ticker, industry)
+        
+        # 添加基础信息
+        result = {
+            "ticker": ticker,
+            "industry": industry,
+            "fmp_industry": fmp_industry,
+            "timestamp": datetime.now().isoformat(),
+            "swot_analysis": swot_analysis
+        }
+        
+        logger.info(f"成功返回股票 {ticker} 的SWOT分析")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取股票 {ticker} SWOT分析时发生未预期错误: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="服务器内部错误，请稍后重试"
+        )
+
+@app.get("/analysis/dashboard")
+async def get_dashboard_data(ticker: str = Query(..., max_length=10, description="股票代码，如 AAPL")):
+    """
+    获取仪表板完整数据（包含财务指标、SWOT分析、评分等）
+    
+    Args:
+        ticker: 股票代码，长度不超过10个字符
+        
+    Returns:
+        包含所有分析数据的完整仪表板数据
+    """
+    # 参数校验
+    if not ticker or not isinstance(ticker, str):
+        raise HTTPException(
+            status_code=400,
+            detail="ticker参数必须是非空字符串"
+        )
+    
+    if len(ticker) > 10:
+        raise HTTPException(
+            status_code=400,
+            detail="ticker长度不能超过10个字符"
+        )
+    
+    # 转换为大写
+    ticker = ticker.upper().strip()
+    
+    try:
+        logger.info(f"开始处理仪表板数据请求: {ticker}")
+        
+        # 获取股票数据
+        stock_data = stock_fetcher.get_stock_data(ticker)
+        
+        if stock_data is None:
+            logger.warning(f"无法获取股票 {ticker} 的数据")
+            raise HTTPException(
+                status_code=500,
+                detail="无法获取股票数据，请稍后重试"
+            )
+        
+        # 确定行业
+        company_info = stock_data.get("company_info", {})
+        fmp_industry = company_info.get("industry", "General")
+        industry = template_manager.map_fmp_industry(fmp_industry)
+        
+        # 获取评分
+        rating_result = score_stock(stock_data)
+        
+        # 获取财务分析
+        financial_analysis = financial_analyzer.get_detailed_financial_metrics(ticker, industry, fmp_industry)
+        
+        # 获取SWOT分析
+        swot_analysis = financial_analyzer.generate_swot_analysis(ticker, industry)
+        
+        # 构建仪表板数据
+        dashboard_data = {
+            "ticker": ticker,
+            "company_info": company_info,
+            "industry": industry,
+            "fmp_industry": fmp_industry,
+            "timestamp": datetime.now().isoformat(),
+            
+            # 关键财务指标
+            "key_financial_indicators": financial_analysis.get("key_indicators", {}),
+            "industry_comparison": financial_analysis.get("industry_comparison", {}),
+            
+            # SWOT分析
+            "swot_analysis": swot_analysis,
+            
+            # 评分结果
+            "scoring": rating_result,
+            
+            # 详细财务指标
+            "financial_metrics": {
+                "growth_metrics": financial_analysis.get("growth_metrics", {}),
+                "efficiency_metrics": financial_analysis.get("efficiency_metrics", {}),
+                "liquidity_metrics": financial_analysis.get("liquidity_metrics", {}),
+                "profitability_metrics": financial_analysis.get("profitability_metrics", {}),
+                "valuation_metrics": financial_analysis.get("valuation_metrics", {})
+            }
+        }
+        
+        # 添加请求统计信息
+        request_count = stock_fetcher._get_request_count()
+        dashboard_data["request_info"] = {
+            "daily_requests_used": request_count,
+            "daily_limit": stock_fetcher.daily_request_limit,
+            "remaining_requests": stock_fetcher.daily_request_limit - request_count
+        }
+        
+        logger.info(f"成功返回股票 {ticker} 的仪表板数据")
+        return dashboard_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取股票 {ticker} 仪表板数据时发生未预期错误: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="服务器内部错误，请稍后重试"
         )
 
 def _suggest_template_for_industry(industry: str) -> str:
