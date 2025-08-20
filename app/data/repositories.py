@@ -89,7 +89,7 @@ class CoreIndicatorsRepository:
         stmt = select(CoreIndicatorsHistory).where(
             and_(
                 CoreIndicatorsHistory.stock_id == stock_id,
-                CoreIndicatorsHistory.date == date,
+                CoreIndicatorsHistory.date == date,  # date is already a date object
                 CoreIndicatorsHistory.indicator_id == indicator_id
             )
         )

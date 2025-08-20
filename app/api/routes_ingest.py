@@ -1,5 +1,5 @@
 import time
-from datetime import date
+from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.base import get_db
@@ -40,12 +40,30 @@ async def ingest_core_indicators(
                 detail="Maximum 100 symbols allowed per request"
             )
         
-        # Perform ingestion
-        service = IngestService(db)
-        results = await service.ingest_multiple_symbols(
-            symbols=request.symbols,
-            target_date=request.date
-        )
+        # Perform ingestion sequentially to avoid database session conflicts
+        results = []
+        for symbol in request.symbols:
+            try:
+                # Create a new service instance for each symbol
+                service = IngestService(db)
+                result = await service.ingest_symbol(symbol, request.date)
+                results.append(result)
+            except Exception as e:
+                logger.error(f"Error ingesting {symbol}: {e}")
+                # Create error result
+                from app.schemas.ingest import IngestResult
+                from app.core.timeutil import get_current_date
+                error_result = IngestResult(
+                    symbol=symbol,
+                    date=request.date or get_current_date(),
+                    total_indicators=0,
+                    non_null_indicators=0,
+                    coverage=0.0,
+                    duration_ms=0,
+                    success=False,
+                    error=str(e)
+                )
+                results.append(error_result)
         
         # Calculate overall statistics
         total_symbols = len(results)
@@ -65,7 +83,7 @@ async def ingest_core_indicators(
             successful_symbols=successful_symbols,
             failed_symbols=failed_symbols,
             overall_duration_ms=overall_duration_ms,
-            timestamp=date.today()
+            timestamp=datetime.now()
         )
     
     except HTTPException:
