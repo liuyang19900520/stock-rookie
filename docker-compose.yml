@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - FMP_API_KEY=${FMP_API_KEY}
+      - DB_URL=${DB_URL}
+      - RATE_LIMIT_RPS=3
+      - RATE_LIMIT_BURST=6
+      - TIMEZONE=Asia/Tokyo
+      - INGEST_SCHEDULE_CRON=0 0 18 * * *
+    volumes:
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
