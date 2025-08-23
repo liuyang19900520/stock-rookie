@@ -8,6 +8,7 @@ from app.db.base import init_db, close_db
 from app.jobs.scheduler import get_scheduler
 from app.api.routes_catalog import router as catalog_router
 from app.api.routes_ingest import router as ingest_router
+from app.api.routes_scoring import router as scoring_router
 
 
 @asynccontextmanager
@@ -50,6 +51,7 @@ app.add_middleware(
 # Include routers
 app.include_router(catalog_router)
 app.include_router(ingest_router)
+app.include_router(scoring_router)
 
 
 @app.get("/")

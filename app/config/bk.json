@@ -1,0 +1,777 @@
+{
+    "meta": {
+        "stock": "BK",
+        "name": "The Bank of New York Mellon",
+        "as_of": "2025-08-23",
+        "scoring_version": "bk_unified_v1.0",
+        "base_currency": "USD",
+        "peer_group": [
+            "STT",
+            "NTRS",
+            "JPM"
+        ]
+    },
+    "weights": {
+        "core_fundamentals": 45,
+        "valuation_and_returns": 20,
+        "digital_asset_optionality": 25,
+        "market_technicals": 10
+    },
+    "indicators": [
+        {
+            "id": "roe_ttm",
+            "name": "ROE TTM",
+            "category": "core_fundamentals",
+            "weight": 10,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "ratios-ttm",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        10,
+                        60
+                    ],
+                    [
+                        12,
+                        80
+                    ],
+                    [
+                        14,
+                        90
+                    ],
+                    [
+                        16,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "operating_margin_ttm",
+            "name": "Operating Margin TTM",
+            "category": "core_fundamentals",
+            "weight": 5,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "ratios-ttm",
+            "scoring": {
+                "type": "peer_percentile",
+                "peer": "operating_margin_ttm"
+            }
+        },
+        {
+            "id": "revenue_yoy",
+            "name": "Revenue YoY Growth",
+            "category": "core_fundamentals",
+            "weight": 5,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "financial-growth",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        0,
+                        60
+                    ],
+                    [
+                        3,
+                        75
+                    ],
+                    [
+                        6,
+                        90
+                    ],
+                    [
+                        9,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "interest_coverage_ttm",
+            "name": "Interest Coverage TTM",
+            "category": "core_fundamentals",
+            "weight": 5,
+            "unit": "ratio",
+            "direction": "higher_is_better",
+            "source_api": "ratios-ttm",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        2,
+                        60
+                    ],
+                    [
+                        4,
+                        80
+                    ],
+                    [
+                        6,
+                        90
+                    ],
+                    [
+                        8,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "debt_equity",
+            "name": "Debt to Equity",
+            "category": "core_fundamentals",
+            "weight": 4,
+            "unit": "ratio",
+            "direction": "lower_is_better",
+            "source_api": "ratios-ttm",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        2.0,
+                        50
+                    ],
+                    [
+                        1.5,
+                        70
+                    ],
+                    [
+                        1.0,
+                        85
+                    ],
+                    [
+                        0.5,
+                        95
+                    ],
+                    [
+                        0.2,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "current_ratio",
+            "name": "Current Ratio",
+            "category": "core_fundamentals",
+            "weight": 3,
+            "unit": "ratio",
+            "direction": "higher_is_better",
+            "source_api": "ratios-ttm",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        1.0,
+                        60
+                    ],
+                    [
+                        1.2,
+                        80
+                    ],
+                    [
+                        1.5,
+                        90
+                    ],
+                    [
+                        2.0,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "quick_ratio",
+            "name": "Quick Ratio",
+            "category": "core_fundamentals",
+            "weight": 3,
+            "unit": "ratio",
+            "direction": "higher_is_better",
+            "source_api": "ratios-ttm",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        0.8,
+                        60
+                    ],
+                    [
+                        1.0,
+                        75
+                    ],
+                    [
+                        1.2,
+                        90
+                    ],
+                    [
+                        1.5,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "cet1",
+            "name": "CET1 Ratio",
+            "category": "core_fundamentals",
+            "weight": 5,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        10.0,
+                        70
+                    ],
+                    [
+                        10.5,
+                        85
+                    ],
+                    [
+                        11.0,
+                        95
+                    ],
+                    [
+                        11.5,
+                        100
+                    ]
+                ]
+            },
+            "red_flag_if_below": 10.0
+        },
+        {
+            "id": "lcr_nsfr",
+            "name": "LCR / NSFR",
+            "category": "core_fundamentals",
+            "weight": 5,
+            "unit": "ratio",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "scoring": {
+                "type": "composite_avg",
+                "sub": [
+                    {
+                        "k": "lcr",
+                        "breakpoints": [
+                            [
+                                100,
+                                80
+                            ],
+                            [
+                                110,
+                                90
+                            ],
+                            [
+                                115,
+                                95
+                            ],
+                            [
+                                120,
+                                100
+                            ]
+                        ]
+                    },
+                    {
+                        "k": "nsfr",
+                        "breakpoints": [
+                            [
+                                110,
+                                80
+                            ],
+                            [
+                                120,
+                                90
+                            ],
+                            [
+                                125,
+                                95
+                            ],
+                            [
+                                130,
+                                100
+                            ]
+                        ]
+                    }
+                ]
+            },
+            "red_flag_if_below_any": {
+                "lcr": 100,
+                "nsfr": 100
+            }
+        },
+        {
+            "id": "pb",
+            "name": "Price to Book (Relative to Peer Median)",
+            "category": "valuation_and_returns",
+            "weight": 8,
+            "unit": "ratio",
+            "direction": "lower_is_better",
+            "source_api": "key-metrics-ttm",
+            "scoring": {
+                "type": "relative_to_peer",
+                "relation": "pb / median_peer_pb",
+                "mapping": [
+                    [
+                        0.80,
+                        95
+                    ],
+                    [
+                        0.90,
+                        90
+                    ],
+                    [
+                        1.00,
+                        80
+                    ],
+                    [
+                        1.10,
+                        65
+                    ],
+                    [
+                        1.20,
+                        50
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "earnings_yield_ttm",
+            "name": "Earnings Yield TTM",
+            "category": "valuation_and_returns",
+            "weight": 4,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "key-metrics-ttm",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        5,
+                        70
+                    ],
+                    [
+                        6,
+                        80
+                    ],
+                    [
+                        7.5,
+                        90
+                    ],
+                    [
+                        9,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "fcf_yield_ttm",
+            "name": "FCF Yield TTM",
+            "category": "valuation_and_returns",
+            "weight": 4,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "key-metrics-ttm",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        3,
+                        70
+                    ],
+                    [
+                        5,
+                        85
+                    ],
+                    [
+                        7,
+                        95
+                    ],
+                    [
+                        9,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "dividend_yield_ttm",
+            "name": "Dividend Yield & Payout",
+            "category": "valuation_and_returns",
+            "weight": 4,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "key-metrics-ttm",
+            "scoring": {
+                "type": "two_dim",
+                "x": "dividend_yield_ttm",
+                "y": "payout_ratio_ttm",
+                "grid": [
+                    {
+                        "x": [
+                            2.5,
+                            5.0
+                        ],
+                        "y": [
+                            20,
+                            55
+                        ],
+                        "score": 90
+                    },
+                    {
+                        "x": [
+                            2.0,
+                            2.5
+                        ],
+                        "y": [
+                            20,
+                            60
+                        ],
+                        "score": 80
+                    },
+                    {
+                        "x": [
+                            5.0,
+                            8.0
+                        ],
+                        "y": [
+                            20,
+                            65
+                        ],
+                        "score": 75
+                    },
+                    {
+                        "x": [
+                            8.0,
+                            99.0
+                        ],
+                        "y": [
+                            70,
+                            100
+                        ],
+                        "score": 50
+                    }
+                ],
+                "default": 60
+            }
+        },
+        {
+            "id": "stablecoin_custody",
+            "name": "Stablecoin Reserve Custody",
+            "category": "digital_asset_optionality",
+            "weight": 10,
+            "unit": "enum",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "scoring": {
+                "type": "categorical",
+                "map": {
+                    "none": 0,
+                    "1_major": 80,
+                    ">=2_major": 100
+                }
+            }
+        },
+        {
+            "id": "digital_custody_maturity",
+            "name": "Digital Asset Custody Maturity",
+            "category": "digital_asset_optionality",
+            "weight": 6,
+            "unit": "enum",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "scoring": {
+                "type": "stage",
+                "map": {
+                    "pilot": 60,
+                    "limited_clients": 80,
+                    "broad_launch": 95,
+                    "fully_integrated": 100
+                }
+            }
+        },
+        {
+            "id": "tokenization_initiatives",
+            "name": "Tokenization Initiatives (Live)",
+            "category": "digital_asset_optionality",
+            "weight": 5,
+            "unit": "count",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "scoring": {
+                "type": "count_thresholds",
+                "breakpoints": [
+                    [
+                        1,
+                        80
+                    ],
+                    [
+                        2,
+                        90
+                    ],
+                    [
+                        3,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "regulatory_tailwind",
+            "name": "US Stablecoin Regulation Phase",
+            "category": "digital_asset_optionality",
+            "weight": 4,
+            "unit": "enum",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "scoring": {
+                "type": "policy_phase",
+                "map": {
+                    "no_federal_law": 40,
+                    "law_passed_rules_pending": 85,
+                    "rules_finalized": 95,
+                    "broad_adoption": 100
+                }
+            }
+        },
+        {
+            "id": "price_change_3m",
+            "name": "Price Change 3M",
+            "category": "market_technicals",
+            "weight": 3,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "historical-price",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        -10,
+                        60
+                    ],
+                    [
+                        -5,
+                        75
+                    ],
+                    [
+                        0,
+                        85
+                    ],
+                    [
+                        5,
+                        95
+                    ],
+                    [
+                        10,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "beta",
+            "name": "Beta + Volatility (6M proxy with 90D vol)",
+            "category": "market_technicals",
+            "weight": 3,
+            "unit": "ratio",
+            "direction": "lower_is_better",
+            "source_api": "quote/historical-price",
+            "scoring": {
+                "type": "two_dim_invert",
+                "x": "beta",
+                "y": "volatility_90d",
+                "target": {
+                    "beta": [
+                        0.7,
+                        1.1
+                    ],
+                    "vol": [
+                        0,
+                        999
+                    ]
+                }
+            }
+        },
+        {
+            "id": "distance_to_52w_high",
+            "name": "Distance to 52W High",
+            "category": "market_technicals",
+            "weight": 2,
+            "unit": "%",
+            "direction": "lower_is_better",
+            "source_api": "historical-price",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        20,
+                        60
+                    ],
+                    [
+                        15,
+                        75
+                    ],
+                    [
+                        10,
+                        90
+                    ],
+                    [
+                        5,
+                        100
+                    ]
+                ]
+            }
+        },
+        {
+            "id": "distance_to_52w_low",
+            "name": "Distance to 52W Low",
+            "category": "market_technicals",
+            "weight": 2,
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "historical-price",
+            "scoring": {
+                "type": "linear_thresholds",
+                "breakpoints": [
+                    [
+                        20,
+                        60
+                    ],
+                    [
+                        40,
+                        80
+                    ],
+                    [
+                        60,
+                        90
+                    ],
+                    [
+                        80,
+                        100
+                    ]
+                ]
+            }
+        }
+    ],
+    "decision_rules": {
+        "score_to_rating": [
+            {
+                "min_score": 85,
+                "rating": "BUY",
+                "sizing": "full_or_overweight"
+            },
+            {
+                "min_score": 75,
+                "rating": "ACCUMULATE",
+                "sizing": "build_on_dips"
+            },
+            {
+                "min_score": 65,
+                "rating": "HOLD",
+                "sizing": "neutral"
+            },
+            {
+                "min_score": 0,
+                "rating": "REDUCE/WAIT",
+                "sizing": "underweight"
+            }
+        ],
+        "red_flags": [
+            {
+                "id": "cet1",
+                "cond": "< 10.0",
+                "action": "DOWNGRADE_ONE_LEVEL"
+            },
+            {
+                "id": "lcr_nsfr",
+                "cond": "LCR < 100 or NSFR < 100",
+                "action": "DOWNGRADE_ONE_LEVEL"
+            },
+            {
+                "id": "stablecoin_custody",
+                "cond": "drops_to_none",
+                "action": "DOWNGRADE_ONE_LEVEL"
+            }
+        ],
+        "buy_triggers": [
+            "pb score >= 90 AND roe_ttm >= 12 AND no_red_flags",
+            "price_change_3m score <= 75 AND core_fundamentals_weighted >= 75",
+            "tokenization_initiatives >= 2 AND regulatory_tailwind >= 85"
+        ],
+        "trim_triggers": [
+            "pb score <= 55 OR dividend_yield_ttm score <= 60",
+            "revenue_yoy score <= 60"
+        ]
+    },
+    "data_overrides": {
+        "manual": {
+            "stablecoin_custody": ">=2_major",
+            "digital_custody_maturity": "limited_clients",
+            "tokenization_initiatives": 2,
+            "regulatory_tailwind": "law_passed_rules_pending"
+        }
+    },
+    "special_indicators": [
+        {
+            "id": "cet1",
+            "description": "普通股一級資本充足率（監管披露）",
+            "unit": "%",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "frequency": "quarterly",
+            "how_to_get": "投资者关系/季度新闻稿与监管披露PDF；解析CET1 Ratio字段"
+        },
+        {
+            "id": "lcr_nsfr",
+            "description": "流动性覆盖率/净稳定资金比率（监管口径）",
+            "unit": "ratio",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "frequency": "quarterly",
+            "how_to_get": "投资者关系披露或LCR/NSFR专页；读取LCR与NSFR数值并合成"
+        },
+        {
+            "id": "stablecoin_custody",
+            "description": "是否为主要稳定币（如USDC、RLUSD等）的储备托管行",
+            "unit": "enum",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "frequency": "ad-hoc",
+            "how_to_get": "公司新闻稿、合作公告；枚举为 none / 1_major / >=2_major"
+        },
+        {
+            "id": "digital_custody_maturity",
+            "description": "数字资产托管平台成熟度",
+            "unit": "stage",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "frequency": "ad-hoc",
+            "how_to_get": "平台发布/客户接入范围；pilot/limited_clients/broad_launch/fully_integrated"
+        },
+        {
+            "id": "tokenization_initiatives",
+            "description": "面向客户的代币化项目数量（在产/落地）",
+            "unit": "count",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "frequency": "ad-hoc",
+            "how_to_get": "新闻稿/合作方公告统计（如代币化货币基金等）"
+        },
+        {
+            "id": "regulatory_tailwind",
+            "description": "美国稳定币监管推进阶段",
+            "unit": "enum",
+            "direction": "higher_is_better",
+            "source_api": "manual",
+            "frequency": "ad-hoc",
+            "how_to_get": "联邦法案与监管细则进展；no_federal_law / law_passed_rules_pending / rules_finalized / broad_adoption"
+        }
+    ]
+}

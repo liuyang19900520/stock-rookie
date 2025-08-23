@@ -1,0 +1,77 @@
+{
+    "symbol": "BK",
+    "overrides": {
+        // ===== 核心基本面指标 (权重45%) =====
+        "roe": 14.2, // ROE 14.2% - 线性阈值评分
+        "operating_margin": 22.5, // 营业利润率 22.5% - 线性阈值评分
+        "revenue_yoy": 18.3, // 收入同比增长 18.3% - 线性阈值评分
+        "interest_coverage": 8.5, // 利息保障倍数 8.5 - 线性阈值评分
+        "debt_equity": 0.85, // 负债权益比 0.85 - 线性阈值评分
+        "current_ratio": 1.25, // 流动比率 1.25 - 线性阈值评分
+        "quick_ratio": 1.15, // 速动比率 1.15 - 线性阈值评分
+        "cet1": 13.2, // 核心一级资本充足率 13.2% - 线性阈值评分
+        "lcr": 118, // 流动性覆盖率 118% - 线性阈值评分
+        "nsfr": 128, // 净稳定资金比率 128% - 线性阈值评分
+        // ===== 估值与回报指标 (权重20%) =====
+        "pb": 1.15, // 市净率 1.15 - 线性阈值评分
+        "earnings_yield": 8.5, // 盈利收益率 8.5% - 线性阈值评分
+        "fcf_yield": 6.2, // 自由现金流收益率 6.2% - 线性阈值评分
+        "dividend_yield": 4.1, // 股息率 4.1% - 线性阈值评分
+        "payout_ratio": 45, // 派息率 45% - 线性阈值评分
+        "buyback_yield": 2.3, // 回购收益率 2.3% - 线性阈值评分
+        // ===== 数字资产机会指标 (权重25%) =====
+        "stablecoin_custody": ">=2_major", // 稳定币托管 - 分类评分
+        "digital_custody_maturity": "established", // 数字托管成熟度 - 分类评分
+        "tokenization_initiatives": 3, // 代币化项目 - 计数阈值评分
+        "regulatory_tailwind": "law_passed_rules_pending", // 监管顺风 - 政策阶段评分
+        // ===== 市场技术指标 (权重10%) =====
+        "beta": 0.92, // 贝塔系数 0.92 - 线性阈值评分
+        "volatility": 16.5, // 波动率 16.5% - 线性阈值评分
+        "momentum_3m": 12.8, // 3个月动量 12.8% - 线性阈值评分
+        "momentum_6m": 8.5, // 6个月动量 8.5% - 线性阈值评分
+        "price_change_1m": 5.2, // 1个月价格变化 5.2% - 线性阈值评分
+        "price_change_3m": 12.8, // 3个月价格变化 12.8% - 线性阈值评分
+        "price_change_6m": 8.5, // 6个月价格变化 8.5% - 线性阈值评分
+        "price_change_12m": 15.3, // 12个月价格变化 15.3% - 线性阈值评分
+        "distance_to_52w_high": 8.5, // 距离52周高点 8.5% - 线性阈值评分
+        "distance_to_52w_low": 35.2, // 距离52周低点 35.2% - 线性阈值评分
+        "rsi": 58, // RSI指标 58 - 线性阈值评分
+        "sma50": 45.20, // 50日均线 45.20 - 线性阈值评分
+        "sma200": 42.80, // 200日均线 42.80 - 线性阈值评分
+        // ===== 增长与质量指标 =====
+        "eps_yoy": 22.1, // EPS同比增长 22.1% - 线性阈值评分
+        "revenue_cagr_3y": 12.5, // 收入3年复合增长率 12.5% - 线性阈值评分
+        "eps_cagr_3y": 15.8, // EPS3年复合增长率 15.8% - 线性阈值评分
+        "fcf_yoy": 25.3, // 自由现金流同比增长 25.3% - 线性阈值评分
+        "asset_turnover": 0.85, // 资产周转率 0.85 - 线性阈值评分
+        "gross_margin": 65.2, // 毛利率 65.2% - 线性阈值评分
+        "net_margin": 18.5, // 净利率 18.5% - 线性阈值评分
+        "fcf_margin": 22.1, // 自由现金流率 22.1% - 线性阈值评分
+        "cashflow_quality": 1.15, // 现金流质量 1.15 - 线性阈值评分
+        // ===== 风险指标 =====
+        "altman_z": 3.2, // Altman Z分数 3.2 - 线性阈值评分
+        "piotroski_f": 7, // Piotroski F分数 7 - 线性阈值评分
+        "net_debt_ebitda": 2.1, // 净债务/EBITDA 2.1 - 线性阈值评分
+        "realized_vol": 18.5, // 已实现波动率 18.5% - 线性阈值评分
+        "max_drawdown": 12.3, // 最大回撤 12.3% - 线性阈值评分
+        // ===== 分析师预期指标 =====
+        "eps_next_12m_revision": 3.2, // 未来12个月EPS修正 3.2% - 线性阈值评分
+        "revenue_est_trend": "upward", // 收入预期趋势 - 分类评分
+        "analyst_rating": "buy", // 分析师评级 - 分类评分
+        "price_target": 52.50, // 目标价 52.50 - 线性阈值评分
+        // ===== 宏观经济指标 =====
+        "interest_rate_sensitivity": "low", // 利率敏感性 - 分类评分
+        "inflation_hedge": "moderate", // 通胀对冲 - 分类评分
+        "currency_exposure": "usd_heavy", // 货币敞口 - 分类评分
+        // ===== 行业特定指标 =====
+        "market_share": 8.5, // 市场份额 8.5% - 线性阈值评分
+        "customer_satisfaction": 4.2, // 客户满意度 4.2/5 - 线性阈值评分
+        "digital_transformation": "advanced", // 数字化转型 - 分类评分
+        "cybersecurity_score": 85, // 网络安全评分 85 - 线性阈值评分
+        // ===== ESG指标 =====
+        "esg_score": 78, // ESG评分 78 - 线性阈值评分
+        "carbon_footprint": "low", // 碳足迹 - 分类评分
+        "diversity_score": 82, // 多样性评分 82 - 线性阈值评分
+        "governance_score": 85 // 治理评分 85 - 线性阈值评分
+    }
+}
